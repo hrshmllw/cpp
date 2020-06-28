@@ -1,5 +1,5 @@
 /*
-	Name: dataStructureLabAssessmentTask.cpp
+	Name: macawili_dataStructureLabAssessmentTask.cpp
 	Copyright: 2020
 	Author: Edcel Jeremy Macawili
 	Date: 11/06/20 16:56
@@ -10,6 +10,7 @@
 	Expression Parsing (Infix Notation)
 	Queues (Enqueue Operation)
 	Tree Data Structure (Heap/Heap Sort)
+	Graphs (Adjacency List)
 	Maps (Insert & Iterator Operations)
 	Searching Algorithm (Linear Search)
 */
@@ -22,7 +23,7 @@
 #include <windows.h>
 #include <stdlib.h>
 #define ROWS 10
-#define COLUMNS 4
+#define COLUMNS 5
 using namespace std;
 // Function prototypes
 void mainMenu();
@@ -48,6 +49,9 @@ void registerAccount();
 void printAccounts();
 void clearDatabase();
 bool accountLogin();
+void addLinks(vector<int> adj[], int u, int v);
+void printRecos(vector<int> adj[], int V);
+void checkRecommendations();
 bool continueCheck();
 // Global declaration for stacks and queues used
 stack <string> gameHistory;
@@ -58,7 +62,7 @@ queue <string> gameRequest;
 map <string, string> userAccount;
 // Global declaration for data structure (2D-array)
 string gameList[ROWS][COLUMNS] = {
-	{"Name", "ID", "Year", "Size"}
+	{"Name", "ID", "Year", "Size", "Genre"}
 };
 // Driver code
 main(){
@@ -78,6 +82,7 @@ void mainMenu(){
 	system("cls");
 	switch (userType){
 		case 'a' : case 'A' : {
+			// Passcode needed to enter moderator menu
 			string inputPasscode;
 			char modPasscode[] = "0411";
 			int confirmCode;
@@ -112,7 +117,7 @@ void mainMenu(){
 		}
 	}
 }
-
+// Function menu for moderators
 void modMenu(){
 	char choice;
 	cout << "MOD MENU: " << endl
@@ -144,7 +149,24 @@ void modMenu(){
 			break;
 		}
 		case 'e' : case 'E' : {
-			clearDatabase();
+			char clearConfirm;
+			cout << "Are you sure you want to clear database? (Y/N): ";
+			cin >> clearConfirm;
+			system("cls");
+			switch (clearConfirm){
+				case 'y' : case 'Y' : {
+					clearDatabase();
+					break;
+				}
+				case 'n' : case 'N' : {
+					cout << "Clearing cancelled. Returning to menu." << endl;
+					break;
+				}
+				default : {
+					cout << "Invalid input. Returning to menu." << endl;
+					break;
+				}
+			}
 			break;
 		}
 		case 'f' : case 'F' : {
@@ -162,7 +184,7 @@ void modMenu(){
 		}
 	}
 }
-
+// Function menu for regular users
 void userMenu(){
 	char userChoice;
 	cout << "USER MENU: " << endl
@@ -172,8 +194,9 @@ void userMenu(){
 		<< "[D] - Search library by game ID" << endl
 		<< "[E] - Download time calculator" << endl
 		<< "[F] - Register an account" << endl
-		<< "[G] - Return to main menu" << endl
-		<< "[H] - Exit program" << endl
+		<< "[G] - View similar games by genre" << endl
+		<< "[H] - Return to main menu" << endl
+		<< "[I] - Exit program" << endl
 		<< "Choice: ";
 	cin >> userChoice;
 	system("cls");
@@ -236,10 +259,19 @@ void userMenu(){
 			break;
 		}
 		case 'g' : case 'G' : {
-			mainMenu();
+			if (gameHistory.empty()){
+				cout << "No games have been added yet." << endl;
+			}
+			else {
+				checkRecommendations();
+			}
 			break;
 		}
 		case 'h' : case 'H' : {
+			mainMenu();
+			break;
+		}
+		case 'i' : case 'I' : {
 			cout << "Thank you for using this program.";
 			exit(0);
 			break;
@@ -267,8 +299,11 @@ void addGame(){
 		else if (i == 2){
 			cout << "Year: ";
 		}
-		else {
+		else if (i == 3){
 			cout << "Size: ";
+		}
+		else {
+			cout << "Genre: ";
 		}
 		getline(cin, temp[i]);
 	}
@@ -325,9 +360,10 @@ void checkHistory(){
 // Function to add data to queue as database
 void requestGame(){
 	string requestName;
+	cin.ignore(INT_MAX, '\n');
 	cout << "GAME REQUESTS: " << endl
 		<< "Enter name of game to be requested: ";
-	cin >> requestName;
+	getline(cin, requestName);
 	cout << "Request has been added to list." << endl;
 	gameRequest.push(requestName);
 }
@@ -346,7 +382,7 @@ void checkGameRequest(){
 		}
 	}
 }
-// Heap function
+// Function to collect data and convert to heap
 void heapify(string arr[], int n, int root){
 	int largest = root;
 	int left = 2*root+1;
@@ -363,7 +399,7 @@ void heapify(string arr[], int n, int root){
 		heapify(arr, n, largest);
 	}
 }
-// Heap sort function
+// Function used to sort heap
 void heapSort(string arr[], int n){
 	for (int i = n/2-1; i >= 0; i--){
 		heapify(arr, n, i);
@@ -473,7 +509,7 @@ void searchGameById(){
 		}
 	}
 }
-
+// Precedence function for operators in expression parsing
 int precedence(char op){
 	if (op == '+' || op == '-'){
 		return 1;
@@ -483,7 +519,7 @@ int precedence(char op){
 	}
 	return 0;
 }
-
+// Function for application of operators in expression parsing
 int applyOp(int a, int b, char op){
 	switch(op){
 		case '+' : {
@@ -504,7 +540,7 @@ int applyOp(int a, int b, char op){
 		}
 	}
 }
-
+// Function to evaluate given expression and parse using infix notation
 int evaluate(string tokens){
 	int i;
 	stack <int> values;
@@ -565,7 +601,7 @@ int evaluate(string tokens){
 	}
 	return values.top();
 }
-
+// Function using expression parsing to calculate file size download times
 void downloadCalculate(){
 	string fileSize, downloadSpeed, compute;
 	int total, seconds, hours, minutes;
@@ -584,7 +620,7 @@ void downloadCalculate(){
 		<< minutes << " minutes "
 		<< seconds << " seconds." << endl;
 }
-
+// Function using maps to store registered accounts
 void registerAccount(){
 	string accountUsername, accountPassword;
 	cout << "ACCOUNT REGISTRATION: " << endl
@@ -607,7 +643,7 @@ void registerAccount(){
 		}
 	}
 }
-
+// Prints out registered accounts
 void printAccounts(){
 	if (userAccount.empty()){
 		cout << "USER ACCOUNT DATABASE: " << endl
@@ -621,7 +657,7 @@ void printAccounts(){
 		}
 	}
 }
-
+// Function to clear whole database i.e. 2d-array and stacks
 void clearDatabase(){
 	for (int i = 1; i < ROWS; i++){
 		for (int j = 0; j < COLUMNS; j++){
@@ -642,7 +678,7 @@ void clearDatabase(){
 	}
 	cout << "Database cleared." << endl;
 }
-
+// Function using access to maps to confirm login by user
 bool accountLogin(){
 	string tempUser, tempPass;
 	cout << "ACCOUNT LOGIN: " << endl
@@ -666,7 +702,41 @@ bool accountLogin(){
 		}
 	}
 }
-
+// Function using vectors to add links/edges to vertices in graph implemented
+void addLinks(vector<int> adj[], int u, int v){
+	adj[u].push_back(v);
+	adj[v].push_back(u);
+}
+// Function using games as vertices in implemented graph structure
+void printRecos(vector<int> adj[], int V){
+	int v;
+	cout << "GAME LIST: " << endl;
+	for (int i = 0; i < gameHistory.size(); i++){
+		cout << i << " - " << gameList[i+1][0] << endl;
+	}
+	cout << "Choice: ";
+	cin >> v;
+	system("cls");
+	cout << "Games similar to " << gameList[v+1][0] << endl;
+	for (auto x : adj[v]){
+		cout << gameList[x+1][0] << " ";
+	}
+	cout << endl;
+}
+// Function printing out graph data structure using adjacency list
+void checkRecommendations(){
+	int V = gameHistory.size();
+	vector<int> adj[V];
+	for (int i = 0; i < V; i++){
+		for (int j = i+1; j < V; j++){
+			if (gameList[i+1][4] == gameList[j+1][4]){
+				addLinks(adj, i, j);
+			}
+		}
+	}
+	printRecos(adj, V);
+}
+// Function to check if user wants to continue using program
 bool continueCheck(){
 	char contCheck;
 	cout << "-----------------------------------" << endl
